@@ -3,6 +3,8 @@ module github.com/anarcher/kroller
 go 1.15
 
 require (
+	github.com/CrowdSurge/banner v0.0.0-20140923200336-8c0e79dc5ff7
+	github.com/fatih/color v1.10.0
 	github.com/googleapis/gnostic v0.5.4 // indirect
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/peterbourgon/ff/v3 v3.0.0
