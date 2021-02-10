@@ -1,6 +1,10 @@
 package resource
 
-import "context"
+import (
+	"context"
+
+	"github.com/anarcher/kroller/pkg/kubernetes"
+)
 
 type Rollout interface {
 	Kind() string
@@ -11,3 +15,19 @@ type Rollout interface {
 }
 
 type RolloutList []Rollout
+
+func (rl *RolloutList) add(r Rollout) {
+	*rl = append(*rl, r)
+}
+
+func GetRolloutList(ctx context.Context, client *kubernetes.Client) (RolloutList, error) {
+	ds, err := client.Deployments(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var rl RolloutList
+	addDeploymentList(&rl, ds)
+
+	return rl, nil
+}
