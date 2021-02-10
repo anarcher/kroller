@@ -5,6 +5,7 @@ import (
 	"flag"
 
 	"github.com/anarcher/kroller/pkg/kubernetes"
+	"github.com/anarcher/kroller/pkg/ui"
 	"github.com/peterbourgon/ff/v3"
 	"github.com/peterbourgon/ff/v3/ffcli"
 )
@@ -42,5 +43,6 @@ func (c *RootConfig) RegisterFlags(fs *flag.FlagSet) {
 }
 
 func (c *RootConfig) Exec(context.Context, []string) error {
+	ui.PrintBanner("kroller")
 	return flag.ErrHelp
 }

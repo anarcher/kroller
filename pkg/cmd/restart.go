@@ -5,6 +5,8 @@ import (
 	"flag"
 	"fmt"
 
+	"github.com/anarcher/kroller/pkg/resource"
+	"github.com/anarcher/kroller/pkg/ui"
 	"github.com/peterbourgon/ff/v3"
 	"github.com/peterbourgon/ff/v3/ffcli"
 )
@@ -45,15 +47,12 @@ func (c *RestartConfig) Exec(ctx context.Context, args []string) error {
 
 	client := c.rootCfg.KubeClient
 
-	deploys, err := client.Deployments(ctx)
+	rl, err := resource.GetRolloutList(ctx, client)
 	if err != nil {
 		return err
 	}
 
-	for _, d := range deploys.Items {
-		fmt.Printf("%s/%s", d.Namespace, d.Name)
-		println("")
-	}
+	ui.RolloutList(rl)
 
 	return nil
 }
