@@ -8,6 +8,7 @@ import (
 	"github.com/anarcher/kroller/pkg/resource"
 	"github.com/anarcher/kroller/pkg/target"
 	"github.com/anarcher/kroller/pkg/ui"
+	"github.com/fatih/color"
 	"github.com/peterbourgon/ff/v3"
 	"github.com/peterbourgon/ff/v3/ffcli"
 )
@@ -63,6 +64,17 @@ func (c *RestartConfig) Exec(ctx context.Context, args []string) error {
 	}
 
 	ui.RolloutList(rl)
+
+	fmt.Println("")
+	fmt.Printf(color.GreenString("Do you want to continue and restart? "))
+	ok, err := ui.AskForConfirm()
+	if err != nil {
+		return err
+	}
+
+	if !ok {
+		return nil
+	}
 
 	return nil
 }
