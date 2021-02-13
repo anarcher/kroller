@@ -16,3 +16,8 @@ func (c *Client) Deployments(ctx context.Context) (*appv1.DeploymentList, error)
 
 	return deploys, nil
 }
+
+func (c *Client) UpdateDeployment(ctx context.Context, d *appv1.Deployment) error {
+	_, err := c.clientset.AppsV1().Deployments(d.Namespace).Update(ctx, d, metav1.UpdateOptions{})
+	return err
+}

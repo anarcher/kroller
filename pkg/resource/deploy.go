@@ -2,18 +2,24 @@ package resource
 
 import (
 	"context"
+	"time"
 
+	"github.com/anarcher/kroller/pkg/kubernetes"
 	appv1 "k8s.io/api/apps/v1"
 )
 
 type Deployment struct {
+	client *kubernetes.Client
 	deploy *appv1.Deployment
 }
 
-func addDeploymentList(rl *RolloutList, list *appv1.DeploymentList) {
+func addDeploymentList(rl *RolloutList, list *appv1.DeploymentList, client *kubernetes.Client) {
 	for _, _d := range list.Items {
 		d := _d
-		rl.add(&Deployment{&d})
+		rl.add(&Deployment{
+			deploy: &d,
+			client: client,
+		})
 	}
 }
 
@@ -30,5 +36,12 @@ func (d *Deployment) Namespace() string {
 }
 
 func (d *Deployment) Restart(ctx context.Context) error {
-	return nil
+	obj := d.deploy
+	if obj.Spec.Template.ObjectMeta.Annotations == nil {
+		obj.Spec.Template.ObjectMeta.Annotations = make(map[string]string)
+	}
+	obj.Spec.Template.ObjectMeta.Annotations["kubectl.kubernetes.io/restartedAt"] = time.Now().Format(time.RFC3339)
+
+	client := d.client
+	return client.UpdateDeployment(ctx, obj)
 }

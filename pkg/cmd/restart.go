@@ -43,10 +43,6 @@ func NewRestartCmd(rootCfg *RootConfig) *ffcli.Command {
 }
 
 func (c *RestartConfig) Exec(ctx context.Context, args []string) error {
-	for _, t := range c.targets {
-		fmt.Println("target:", t)
-	}
-
 	client := c.rootCfg.KubeClient
 
 	rl, err := resource.GetRolloutList(ctx, client)
@@ -74,6 +70,13 @@ func (c *RestartConfig) Exec(ctx context.Context, args []string) error {
 
 	if !ok {
 		return nil
+	}
+
+	for _, r := range rl {
+		if err := r.Restart(ctx); err != nil {
+			return err
+		}
+		fmt.Println(color.YellowString("Restarting %s/%s/%s...", r.Namespace(), r.Kind(), r.Name()))
 	}
 
 	return nil

@@ -27,7 +27,7 @@ func GetRolloutList(ctx context.Context, client *kubernetes.Client) (RolloutList
 	}
 
 	var rl RolloutList
-	addDeploymentList(&rl, ds)
+	addDeploymentList(&rl, ds, client)
 
 	return rl, nil
 }
