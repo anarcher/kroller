@@ -26,8 +26,14 @@ func GetRolloutList(ctx context.Context, client *kubernetes.Client) (RolloutList
 		return nil, err
 	}
 
+	sts, err := client.StatefulSets(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	var rl RolloutList
 	addDeploymentList(&rl, ds, client)
+	addStatefulSetList(&rl, sts, client)
 
 	return rl, nil
 }
