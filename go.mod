@@ -8,6 +8,7 @@ require (
 	github.com/googleapis/gnostic v0.5.4 // indirect
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/peterbourgon/ff/v3 v3.0.0
+	github.com/pkg/errors v0.9.1
 	github.com/rodaine/table v1.0.1
 	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad // indirect
 	golang.org/x/net v0.0.0-20210119194325-5f4716e94777 // indirect
