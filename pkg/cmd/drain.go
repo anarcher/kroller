@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/anarcher/kroller/pkg/aws"
 	"github.com/anarcher/kroller/pkg/kubernetes"
 	"github.com/anarcher/kroller/pkg/ui"
+
 	"github.com/fatih/color"
 	"github.com/peterbourgon/ff/v3"
 	"github.com/peterbourgon/ff/v3/ffcli"
@@ -18,12 +20,12 @@ import (
 )
 
 type DrainConfig struct {
-	rootCfg         *RootConfig
-	awsRegion       string
-	gracePeriod     time.Duration
-	node            string
-	isTerminateNode bool
-	reduceASG       bool
+	rootCfg                  *RootConfig
+	awsRegion                string
+	gracePeriod              time.Duration
+	node                     string
+	isTerminateNode          bool
+	decrementDesiredCapacity bool
 }
 
 func NewDrainCmd(rootCfg *RootConfig) *ffcli.Command {
@@ -37,7 +39,7 @@ func NewDrainCmd(rootCfg *RootConfig) *ffcli.Command {
 	fs.DurationVar(&cfg.gracePeriod, "grace-period", (30 * time.Second), "Pod grace-period")
 	fs.StringVar(&cfg.node, "node", "", "The node that should drain")
 	fs.BoolVar(&cfg.isTerminateNode, "terminate-node", false, "Terminate the AWS instance in the autoscaling group")
-	fs.BoolVar(&cfg.reduceASG, "reduce-asg", false, "Reduce size of the autoscaling group")
+	fs.BoolVar(&cfg.decrementDesiredCapacity, "decr-desired-capacity", false, "Decrement desired capacity of the autoscaling group")
 	rootCfg.RegisterFlags(fs)
 
 	c := &ffcli.Command{
@@ -115,6 +117,41 @@ func (c *DrainConfig) drainNode(ctx context.Context) error {
 }
 
 func (c *DrainConfig) terminateNode(ctx context.Context) error {
+	verbose := c.rootCfg.Verbose
+
+	fmt.Println("")
+	fmt.Printf(color.RedString("Do you want to continue and terminate the node? "))
+	ok, err := ui.AskForConfirm()
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return nil
+	}
+
+	ui.Print("", verbose)
+	ui.PrintTitle("Node termination:\n", verbose)
+
+	client, err := aws.NewClient(c.awsRegion)
+	if err != nil {
+		return err
+	}
+
+	instanceID, err := client.GetInstanceID(c.node)
+	if err != nil {
+		return err
+	}
+
+	ui.Print(fmt.Sprintf("%-25s %s", "Private DNS:", c.node), verbose)
+	ui.Print(fmt.Sprintf("%-25s %s", "Instance ID:", instanceID), verbose)
+	ui.Print(fmt.Sprintf("Decrement desired capacity: %v", c.decrementDesiredCapacity), verbose)
+
+	if err := client.TerminateInstance(instanceID, c.decrementDesiredCapacity); err != nil {
+		return err
+	}
+
+	ui.Print("\n", verbose)
+	ui.Print("[✓] Node has been terminated!\n", true)
 	return nil
 }
 

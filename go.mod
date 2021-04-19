@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	github.com/CrowdSurge/banner v0.0.0-20140923200336-8c0e79dc5ff7
+	github.com/aws/aws-sdk-go v1.38.21
 	github.com/fatih/color v1.10.0
 	github.com/googleapis/gnostic v0.5.4 // indirect
 	github.com/imdario/mergo v0.3.11 // indirect
