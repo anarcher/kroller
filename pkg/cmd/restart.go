@@ -29,8 +29,10 @@ func NewRestartCmd(rootCfg *RootConfig) *ffcli.Command {
 	rootCfg.RegisterFlags(fs)
 
 	c := &ffcli.Command{
-		Name:    "restart",
-		FlagSet: fs,
+		Name:       "restart",
+		ShortUsage: "restart all rollout resources (deployment,statefulset)",
+		ShortHelp:  "restart all rollout resources",
+		FlagSet:    fs,
 		Options: []ff.Option{
 			ff.WithEnvVarNoPrefix(),
 			ff.WithConfigFileFlag("config"),
