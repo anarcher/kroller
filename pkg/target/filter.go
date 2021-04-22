@@ -39,8 +39,19 @@ type Matchers []Matcher
 
 func (e Matchers) MatchString(s string) bool {
 	b := false
+	i := 0
 	for _, exp := range e {
+		_, ok := exp.(Ignorer)
+		if ok {
+			continue
+		}
 		b = b || exp.MatchString(s)
+		i++
+	}
+
+	// when no matches, return true
+	if i == 0 {
+		return true
 	}
 
 	return b
