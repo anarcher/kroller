@@ -10,6 +10,17 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 )
 
+func (c *Client) Nodes(ctx context.Context, labelSelector fields.Selector) (*v1.NodeList, error) {
+	nodes, err := c.clientset.CoreV1().Nodes().List(ctx, metav1.ListOptions{
+		LabelSelector: labelSelector.String(),
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to find nodes")
+	}
+
+	return nodes, nil
+}
+
 func (c *Client) Node(ctx context.Context, nodeName string) (*v1.Node, error) {
 	node, err := c.clientset.CoreV1().Nodes().Get(ctx, nodeName, metav1.GetOptions{})
 	if err != nil {
