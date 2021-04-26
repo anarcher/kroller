@@ -3,6 +3,8 @@ package cmd
 import (
 	"context"
 	"flag"
+	"fmt"
+	"strings"
 
 	"github.com/fatih/color"
 	"github.com/peterbourgon/ff/v3"
@@ -23,6 +25,7 @@ type NodeInfo struct {
 type ShowNodesConfig struct {
 	rootCfg       *RootConfig
 	labelSelector string
+	nodeName      string
 }
 
 func NewShowNodesCmd(rootCfg *RootConfig) *ffcli.Command {
@@ -33,6 +36,7 @@ func NewShowNodesCmd(rootCfg *RootConfig) *ffcli.Command {
 	fs := flag.NewFlagSet("kroller show nodes", flag.ExitOnError)
 	fs.String("config", "", "config file (optional)")
 	fs.StringVar(&cfg.labelSelector, "l", "", "selector (label query) to filter on, supports '=', '==', and '!='.(e.g. -l key1=value1,key2=value2)")
+	fs.StringVar(&cfg.nodeName, "n", "", "node name")
 
 	rootCfg.RegisterFlags(fs)
 
@@ -53,7 +57,7 @@ func NewShowNodesCmd(rootCfg *RootConfig) *ffcli.Command {
 }
 
 func (c *ShowNodesConfig) Exec(ctx context.Context, args []string) error {
-	//verbose := c.rootCfg.Verbose
+	verbose := c.rootCfg.Verbose
 	kubeCli := c.rootCfg.KubeClient
 
 	selector, err := fields.ParseSelector(c.labelSelector)
@@ -61,9 +65,22 @@ func (c *ShowNodesConfig) Exec(ctx context.Context, args []string) error {
 		return err
 	}
 
-	nodes, err := kubeCli.Nodes(ctx, selector)
-	if err != nil {
-		return err
+	var nodes *v1.NodeList
+
+	if c.nodeName != "" {
+		node, err := kubeCli.Node(ctx, c.nodeName)
+		if err != nil {
+			return err
+		}
+		nodes = &v1.NodeList{
+			Items: []v1.Node{*node},
+		}
+	} else {
+		_nodes, err := kubeCli.Nodes(ctx, selector)
+		if err != nil {
+			return err
+		}
+		nodes = _nodes
 	}
 
 	var nodeInfos []*NodeInfo
@@ -95,16 +112,37 @@ func (c *ShowNodesConfig) Exec(ctx context.Context, args []string) error {
 		nodeInfos = append(nodeInfos, ni)
 	}
 
-	tbl := table.New("Node", "Deployment", "Statusfulsets")
+	tbl := table.New("Node", "Status", "Deployment", "Statusfulsets")
 	headerFmt := color.New(color.FgGreen, color.Underline).SprintfFunc()
 	columnFmt := color.New(color.FgYellow).SprintfFunc()
 	tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
 
 	for _, n := range nodeInfos {
-		tbl.AddRow(n.Node.Name, len(n.Deployments), len(n.Statusfulsets))
+		tbl.AddRow(n.Node.Name, nodeStatus(&n.Node), len(n.Deployments), len(n.Statusfulsets))
 	}
 
 	tbl.Print()
+
+	if !verbose {
+		return nil
+	}
+
+	fmt.Println("")
+	for _, n := range nodeInfos {
+		tbl := table.New("Node", n.Node.Name)
+		headerFmt := color.New(color.FgGreen, color.Underline).SprintfFunc()
+		columnFmt := color.New(color.FgYellow).SprintfFunc()
+		tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
+
+		for _, p := range n.Deployments {
+			tbl.AddRow("Deployments", fmt.Sprintf("%s/%s", p.Namespace, p.Name))
+		}
+		for _, p := range n.Statusfulsets {
+			tbl.AddRow("StatefulSet", fmt.Sprintf("%s/%s", p.Namespace, p.Name))
+		}
+		tbl.Print()
+		fmt.Println("")
+	}
 
 	return nil
 }
@@ -130,4 +168,17 @@ func isStatefulSetPod(p *v1.Pod) bool {
 		return true
 	}
 	return false
+}
+
+func nodeStatus(n *v1.Node) string {
+	conds := []string{}
+	for _, c := range n.Status.Conditions {
+		if c.Status == v1.ConditionTrue {
+			conds = append(conds, string(c.Type))
+		}
+	}
+	if n.Spec.Unschedulable == true {
+		conds = append(conds, "SchedulingDisabled")
+	}
+	return strings.Join(conds, ",")
 }
