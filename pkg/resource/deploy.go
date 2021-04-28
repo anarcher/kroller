@@ -36,12 +36,17 @@ func (d *Deployment) Namespace() string {
 }
 
 func (d *Deployment) Restart(ctx context.Context) error {
-	obj := d.deploy
-	if obj.Spec.Template.ObjectMeta.Annotations == nil {
-		obj.Spec.Template.ObjectMeta.Annotations = make(map[string]string)
+	patch := map[string]interface{}{
+		"spec": map[string]interface{}{
+			"template": map[string]interface{}{
+				"metadata": map[string]interface{}{
+					"annotations": map[string]interface{}{
+						"kubectl.kubernetes.io/restartedAt": time.Now().Format(time.RFC3339),
+					},
+				},
+			},
+		},
 	}
-	obj.Spec.Template.ObjectMeta.Annotations["kubectl.kubernetes.io/restartedAt"] = time.Now().Format(time.RFC3339)
 
-	client := d.client
-	return client.UpdateDeployment(ctx, obj)
+	return d.client.PatchDeployment(ctx, d.deploy, patch)
 }

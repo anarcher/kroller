@@ -36,12 +36,17 @@ func (s *StatefulSet) Namespace() string {
 }
 
 func (s *StatefulSet) Restart(ctx context.Context) error {
-	obj := s.sts
-	if obj.Spec.Template.ObjectMeta.Annotations == nil {
-		obj.Spec.Template.ObjectMeta.Annotations = make(map[string]string)
+	patch := map[string]interface{}{
+		"spec": map[string]interface{}{
+			"template": map[string]interface{}{
+				"metadata": map[string]interface{}{
+					"annotations": map[string]interface{}{
+						"kubectl.kubernetes.io/restartedAt": time.Now().Format(time.RFC3339),
+					},
+				},
+			},
+		},
 	}
-	obj.Spec.Template.ObjectMeta.Annotations["kubectl.kubernetes.io/restartedAt"] = time.Now().Format(time.RFC3339)
 
-	client := s.client
-	return client.UpdateStatefulSet(ctx, obj)
+	return s.client.PatchStatefulSet(ctx, s.sts, patch)
 }
