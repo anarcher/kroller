@@ -15,11 +15,13 @@ func main() {
 	restartCmd := cmd.NewRestartCmd(cfg)
 	drainCmd := cmd.NewDrainCmd(cfg)
 	showCmd := cmd.NewShowCmd(cfg)
+	versionCmd := cmd.NewVersionCmd()
 
 	rootCmd.Subcommands = []*ffcli.Command{
 		restartCmd,
 		drainCmd,
 		showCmd,
+		versionCmd,
 	}
 
 	if err := rootCmd.Parse(os.Args[1:]); err != nil {
