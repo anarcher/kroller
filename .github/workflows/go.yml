@@ -12,7 +12,8 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - uses: dagger/dagger-for-github@v2
-      cmds: |
+      with:
+        cmds: |
             project update
             do build
             do test
