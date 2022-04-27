@@ -1,6 +1,6 @@
 module github.com/anarcher/kroller
 
-go 1.15
+go 1.17
 
 require (
 	github.com/CrowdSurge/banner v0.0.0-20140923200336-8c0e79dc5ff7
