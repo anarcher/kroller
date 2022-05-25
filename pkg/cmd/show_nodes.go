@@ -20,6 +20,7 @@ type NodeInfo struct {
 	Node          v1.Node
 	Deployments   []v1.Pod
 	Statusfulsets []v1.Pod
+	ArgoRollouts  []v1.Pod
 }
 
 type ShowNodesConfig struct {
@@ -93,8 +94,13 @@ func (c *ShowNodesConfig) Exec(ctx context.Context, args []string) error {
 		var (
 			deploys []v1.Pod
 			sts     []v1.Pod
+			rls     []v1.Pod
 		)
 		for _, p := range pods.Items {
+			if isArgoRolloutPod(&p) {
+				rls = append(rls, p)
+				continue
+			}
 			if isDeploymentPod(&p) {
 				deploys = append(deploys, p)
 				continue
@@ -108,17 +114,18 @@ func (c *ShowNodesConfig) Exec(ctx context.Context, args []string) error {
 			Node:          n,
 			Deployments:   deploys,
 			Statusfulsets: sts,
+			ArgoRollouts:  rls,
 		}
 		nodeInfos = append(nodeInfos, ni)
 	}
 
-	tbl := table.New("Node", "Status", "Deployment", "Statusfulsets")
+	tbl := table.New("Node", "Status", "Deployment", "Statusfulsets", "ArgoRollouts")
 	headerFmt := color.New(color.FgGreen, color.Underline).SprintfFunc()
 	columnFmt := color.New(color.FgYellow).SprintfFunc()
 	tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
 
 	for _, n := range nodeInfos {
-		tbl.AddRow(n.Node.Name, nodeStatus(&n.Node), len(n.Deployments), len(n.Statusfulsets))
+		tbl.AddRow(n.Node.Name, nodeStatus(&n.Node), len(n.Deployments), len(n.Statusfulsets), len(n.ArgoRollouts))
 	}
 
 	tbl.Print()
@@ -139,6 +146,9 @@ func (c *ShowNodesConfig) Exec(ctx context.Context, args []string) error {
 		}
 		for _, p := range n.Statusfulsets {
 			tbl.AddRow("StatefulSet", fmt.Sprintf("%s/%s", p.Namespace, p.Name))
+		}
+		for _, p := range n.ArgoRollouts {
+			tbl.AddRow("ArgoRollouts", fmt.Sprintf("%s/%s", p.Namespace, p.Name))
 		}
 		tbl.Print()
 		fmt.Println("")
@@ -165,6 +175,14 @@ func isStatefulSetPod(p *v1.Pod) bool {
 		return false
 	}
 	if controllerRef.Kind == "StatefulSet" {
+		return true
+	}
+	return false
+}
+
+func isArgoRolloutPod(p *v1.Pod) bool {
+	// todo(anarcher): use replicaset?
+	if _, ok := p.Labels["rollouts-pod-template-hash"]; ok {
 		return true
 	}
 	return false
