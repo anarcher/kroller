@@ -24,7 +24,7 @@ func addArgoRollouts(rl *RolloutList, list *v1alpha1.RolloutList, client *kubern
 }
 
 func (r *ArgoRollout) Kind() string {
-	return "Rollout"
+	return "rollout"
 }
 
 func (r *ArgoRollout) Name() string {
