@@ -6,11 +6,14 @@ import (
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+
+	roclientset "github.com/argoproj/argo-rollouts/pkg/client/clientset/versioned"
 )
 
 type Client struct {
-	clientset  *kubernetes.Clientset
-	kubeConfig string
+	clientset         *kubernetes.Clientset
+	rolloutsClientset roclientset.Interface
+	kubeConfig        string
 }
 
 func NewClient(kubeConfig string) (*Client, error) {
@@ -27,10 +30,15 @@ func NewClient(kubeConfig string) (*Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%w kubeconfig: %s", err, kubeConfig)
 	}
+	rolloutsClientset, err := roclientset.NewForConfig(config)
+	if err != nil {
+		return nil, fmt.Errorf("rolloutsClient: %w kubeconfig: %s", err, kubeConfig)
+	}
 
 	c := &Client{
-		clientset:  clientset,
-		kubeConfig: kubeConfig,
+		clientset:         clientset,
+		rolloutsClientset: rolloutsClientset,
+		kubeConfig:        kubeConfig,
 	}
 
 	return c, nil
