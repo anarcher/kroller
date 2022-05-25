@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	github.com/CrowdSurge/banner v0.0.0-20140923200336-8c0e79dc5ff7
+	github.com/argoproj/argo-rollouts v1.2.1
 	github.com/aws/aws-sdk-go v1.38.21
 	github.com/fatih/color v1.10.0
 	github.com/peterbourgon/ff/v3 v3.0.0
@@ -17,7 +18,6 @@ require (
 require (
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
-	github.com/argoproj/argo-rollouts v1.2.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/emicklei/go-restful v2.9.5+incompatible // indirect
 	github.com/go-logr/logr v1.2.0 // indirect
