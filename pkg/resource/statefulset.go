@@ -35,6 +35,10 @@ func (s *StatefulSet) Namespace() string {
 	return s.sts.Namespace
 }
 
+func (s *StatefulSet) NodeSelector() map[string]string {
+	return s.sts.Spec.Template.Spec.NodeSelector
+}
+
 func (s *StatefulSet) Restart(ctx context.Context) error {
 	patch := map[string]interface{}{
 		"spec": map[string]interface{}{

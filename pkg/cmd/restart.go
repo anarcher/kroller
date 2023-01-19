@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"log"
 
 	"github.com/anarcher/kroller/pkg/resource"
 	"github.com/anarcher/kroller/pkg/target"
@@ -11,11 +12,14 @@ import (
 	"github.com/fatih/color"
 	"github.com/peterbourgon/ff/v3"
 	"github.com/peterbourgon/ff/v3/ffcli"
+
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 type RestartConfig struct {
-	rootCfg *RootConfig
-	targets stringSlice
+	rootCfg      *RootConfig
+	targets      stringSlice
+	nodeSelector string
 }
 
 func NewRestartCmd(rootCfg *RootConfig) *ffcli.Command {
@@ -26,6 +30,7 @@ func NewRestartCmd(rootCfg *RootConfig) *ffcli.Command {
 	fs := flag.NewFlagSet("kroller restart", flag.ExitOnError)
 	fs.String("config", "", "config file (optional)")
 	fs.Var(&cfg.targets, "target", "only use the specified objects (Format: <namespace>/<type>/<name>)")
+	fs.StringVar(&cfg.nodeSelector, "node-selector", "", "node label selector used to filter nodes, if empty all nodes are selected (group=nodegroup)")
 	rootCfg.RegisterFlags(fs)
 
 	c := &ffcli.Command{
@@ -52,7 +57,12 @@ func (c *RestartConfig) Exec(ctx context.Context, args []string) error {
 		return err
 	}
 
+	if c.nodeSelector != "" {
+		rl = c.matchNodeSelector(rl)
+	}
+
 	if len(c.targets) > 0 {
+
 		exprs, err := target.StrExps(c.targets...)
 		if err != nil {
 			return err
@@ -82,4 +92,24 @@ func (c *RestartConfig) Exec(ctx context.Context, args []string) error {
 	}
 
 	return nil
+}
+
+func (c *RestartConfig) matchNodeSelector(rl resource.RolloutList) resource.RolloutList {
+	var nodeSelector labels.Selector
+	if ns, err := labels.Parse(c.nodeSelector); err != nil {
+		log.Fatalf("parsing node selector: %s", err)
+	} else {
+		nodeSelector = ns
+	}
+
+	out := make(resource.RolloutList, 0, len(rl))
+
+	for _, r := range rl {
+		set := labels.Set(r.NodeSelector())
+		if nodeSelector.Matches(set) {
+			out = append(out, r)
+		}
+	}
+
+	return out
 }

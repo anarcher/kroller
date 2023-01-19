@@ -35,6 +35,10 @@ func (d *Deployment) Namespace() string {
 	return d.deploy.Namespace
 }
 
+func (d *Deployment) NodeSelector() map[string]string {
+	return d.deploy.Spec.Template.Spec.NodeSelector
+}
+
 func (d *Deployment) Restart(ctx context.Context) error {
 	patch := map[string]interface{}{
 		"spec": map[string]interface{}{
