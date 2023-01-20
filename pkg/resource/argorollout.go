@@ -35,6 +35,10 @@ func (r *ArgoRollout) Namespace() string {
 	return r.rollout.Namespace
 }
 
+func (r *ArgoRollout) NodeSelector() map[string]string {
+	return r.rollout.Spec.Template.Spec.NodeSelector
+}
+
 func (r *ArgoRollout) Restart(ctx context.Context) error {
 	patch := map[string]interface{}{
 		"spec": map[string]interface{}{

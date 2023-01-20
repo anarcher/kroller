@@ -10,6 +10,7 @@ type Rollout interface {
 	Kind() string
 	Name() string
 	Namespace() string
+	NodeSelector() map[string]string
 
 	Restart(context.Context) error
 }
