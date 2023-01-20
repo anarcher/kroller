@@ -30,7 +30,7 @@ func NewRestartCmd(rootCfg *RootConfig) *ffcli.Command {
 	fs := flag.NewFlagSet("kroller restart", flag.ExitOnError)
 	fs.String("config", "", "config file (optional)")
 	fs.Var(&cfg.targets, "target", "only use the specified objects (Format: <namespace>/<type>/<name>)")
-	fs.StringVar(&cfg.nodeSelector, "node-selector", "", "node label selector used to filter nodes, if empty all nodes are selected (group=nodegroup)")
+	fs.StringVar(&cfg.nodeSelector, "node-selector", "", "node label selector used to filter nodes. if value is `empty`, all resources which has no node selector are selected.  (Format: empty,group=nodegroup), ")
 	rootCfg.RegisterFlags(fs)
 
 	c := &ffcli.Command{
@@ -95,14 +95,23 @@ func (c *RestartConfig) Exec(ctx context.Context, args []string) error {
 }
 
 func (c *RestartConfig) matchNodeSelector(rl resource.RolloutList) resource.RolloutList {
+	out := make(resource.RolloutList, 0, len(rl))
+
+	if c.nodeSelector == "nil" || c.nodeSelector == "empty" {
+		for _, r := range rl {
+			if len(r.NodeSelector()) <= 0 {
+				out = append(out, r)
+			}
+		}
+		return out
+	}
+
 	var nodeSelector labels.Selector
 	if ns, err := labels.Parse(c.nodeSelector); err != nil {
 		log.Fatalf("parsing node selector: %s", err)
 	} else {
 		nodeSelector = ns
 	}
-
-	out := make(resource.RolloutList, 0, len(rl))
 
 	for _, r := range rl {
 		set := labels.Set(r.NodeSelector())
