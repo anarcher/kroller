@@ -7,7 +7,7 @@ import (
 	"github.com/peterbourgon/ff/v3/ffcli"
 )
 
-const Version = "v0.2.0"
+const Version = "v0.3.0"
 
 func NewVersionCmd() *ffcli.Command {
 	c := &ffcli.Command{

@@ -19,6 +19,7 @@ import (
 type RestartConfig struct {
 	rootCfg      *RootConfig
 	targets      stringSlice
+	autoApprove  bool
 	nodeSelector string
 }
 
@@ -31,6 +32,7 @@ func NewRestartCmd(rootCfg *RootConfig) *ffcli.Command {
 	fs.String("config", "", "config file (optional)")
 	fs.Var(&cfg.targets, "target", "only use the specified objects (Format: <namespace>/<type>/<name>)")
 	fs.StringVar(&cfg.nodeSelector, "node-selector", "", "node label selector used to filter nodes. if value is `empty`, all resources which has no node selector are selected.  (Format: empty,group=nodegroup), ")
+	fs.BoolVar(&cfg.autoApprove, "force", false, "skip interactive approval.")
 	rootCfg.RegisterFlags(fs)
 
 	c := &ffcli.Command{
@@ -73,15 +75,17 @@ func (c *RestartConfig) Exec(ctx context.Context, args []string) error {
 
 	ui.RolloutList(rl)
 
-	fmt.Println("")
-	fmt.Printf(color.GreenString("Do you want to continue and restart? "))
-	ok, err := ui.AskForConfirm()
-	if err != nil {
-		return err
-	}
+	if !c.autoApprove {
+		fmt.Println("")
+		fmt.Printf(color.GreenString("Do you want to continue and restart? "))
+		ok, err := ui.AskForConfirm()
+		if err != nil {
+			return err
+		}
 
-	if !ok {
-		return nil
+		if !ok {
+			return nil
+		}
 	}
 
 	for _, r := range rl {
