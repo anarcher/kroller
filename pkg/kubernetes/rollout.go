@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/fatih/color"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -14,6 +16,10 @@ import (
 func (c *Client) Rollouts(ctx context.Context) (*v1alpha1.RolloutList, error) {
 	rls, err := c.rolloutsClientset.ArgoprojV1alpha1().Rollouts("").List(ctx, metav1.ListOptions{})
 	if err != nil {
+		if apierrors.IsNotFound(err) {
+			fmt.Printf("%s: %s\n\n", color.YellowString("warn: argo rollouts: not found"), err)
+			return new(v1alpha1.RolloutList), nil
+		}
 		return nil, fmt.Errorf("failed to load argo rollouts: %w", err)
 	}
 	return rls, nil
